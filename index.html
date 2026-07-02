@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drag Bingo</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  @keyframes rainbow-shift {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #1a0a2e;
+    color: #f0e6ff;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.2vmin 2vmin;
+    gap: 1vmin;
+    user-select: none;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 15% 30%, rgba(228, 3, 3, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 20%, rgba(255, 140, 0, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 80%, rgba(0, 77, 255, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 70%, rgba(117, 7, 135, 0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body > * { position: relative; z-index: 1; }
+
+  h1 {
+    font-size: 5vmin;
+    font-weight: 900;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    background: linear-gradient(
+      90deg,
+      #E40303, #FF8C00, #FFED00, #008026, #004DFF, #750787,
+      #FFAFC8, #73D7EE, #613915,
+      #E40303
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: rainbow-shift 5s linear infinite;
+    filter: drop-shadow(0 0 20px rgba(255, 100, 200, 0.4));
+    flex-shrink: 0;
+  }
+
+  .pride-bar {
+    width: 60vw;
+    max-width: 800px;
+    height: 0.6vmin;
+    border-radius: 1vmin;
+    background: linear-gradient(90deg,
+      #E40303 0%, #E40303 11%,
+      #FF8C00 11%, #FF8C00 22%,
+      #FFED00 22%, #FFED00 33%,
+      #008026 33%, #008026 44%,
+      #004DFF 44%, #004DFF 55%,
+      #750787 55%, #750787 66%,
+      #000000 66%, #000000 72%,
+      #613915 72%, #613915 78%,
+      #73D7EE 78%, #73D7EE 84%,
+      #FFAFC8 84%, #FFAFC8 90%,
+      #FFFFFF 90%, #FFFFFF 100%
+    );
+    flex-shrink: 0;
+    box-shadow: 0 0 12px rgba(255, 100, 200, 0.3);
+  }
+
+  .top-section {
+    display: flex;
+    align-items: center;
+    gap: 3vmin;
+    width: 100%;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .current-draw {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4vmin;
+  }
+
+  .current-draw .label {
+    font-size: 1.6vmin;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #c4a0ff;
+  }
+
+  .current-number {
+    width: 12vmin;
+    height: 12vmin;
+    border-radius: 50%;
+    background: conic-gradient(#E40303, #FF8C00, #FFED00, #008026, #004DFF, #750787, #E40303);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 6vmin;
+    font-weight: 900;
+    color: #fff;
+    box-shadow: 0 0 25px rgba(255, 0, 110, 0.4);
+    transition: transform 0.3s ease;
+    position: relative;
+  }
+
+  .current-number::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: #1a0a2e;
+  }
+
+  .current-number span {
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  }
+
+  .current-number.pop {
+    animation: pop 0.4s ease;
+  }
+
+  @keyframes pop {
+    0% { transform: scale(0.5); opacity: 0.5; }
+    60% { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .draw-btn {
+    font-size: 2.5vmin;
+    font-weight: 800;
+    padding: 1.5vmin 4vmin;
+    border: none;
+    border-radius: 1vmin;
+    background: linear-gradient(135deg, #E40303, #FF8C00, #FFED00, #008026, #004DFF, #750787);
+    background-size: 300% 100%;
+    animation: rainbow-shift 3s linear infinite;
+    color: #fff;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 4px 25px rgba(255, 0, 110, 0.3);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  }
+
+  .draw-btn:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 6px 35px rgba(255, 0, 110, 0.5);
+  }
+
+  .draw-btn:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  .draw-btn:disabled {
+    background: #2d1b4e;
+    color: #6b5b8a;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+    animation: none;
+  }
+
+  .stats {
+    font-size: 1.8vmin;
+    color: #b088e0;
+    display: flex;
+    gap: 3vmin;
+  }
+
+  .stats span {
+    color: #e0c0ff;
+    font-weight: 700;
+  }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(9, 1fr);
+    gap: 0.5vmin;
+    width: 92vw;
+    max-width: 1400px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.8vmin;
+    font-weight: 700;
+    border-radius: 0.6vmin;
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.25);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    min-height: 0;
+  }
+
+  .cell.drawn {
+    color: #fff;
+    font-weight: 800;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+
+  .cell.just-drawn {
+    animation: highlight 0.6s ease;
+  }
+
+  @keyframes highlight {
+    0% { transform: scale(0.7); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+  }
+
+  .history {
+    display: flex;
+    gap: 0.5vmin;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 92vw;
+    min-height: 2.5vmin;
+    flex-shrink: 0;
+  }
+
+  .history-item {
+    font-size: 1.5vmin;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 0.2vmin 0.7vmin;
+    border-radius: 0.3vmin;
+    color: #a080c0;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .history-item:last-child {
+    background: linear-gradient(135deg, #ff006e, #8338ec);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
+    font-weight: 700;
+  }
+
+  .reset-btn {
+    font-size: 1.5vmin;
+    padding: 0.5vmin 1.8vmin;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 0.5vmin;
+    background: transparent;
+    color: #a080c0;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .reset-btn:hover {
+    border-color: #E40303;
+    color: #E40303;
+  }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 5, 30, 0.88);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .overlay-ring {
+    width: 48vmin;
+    height: 48vmin;
+    border-radius: 50%;
+    background: conic-gradient(
+      #E40303, #FF8C00, #FFED00, #008026, #004DFF, #750787,
+      #613915, #73D7EE, #FFAFC8, #FFFFFF,
+      #E40303
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow:
+      0 0 60px rgba(228, 3, 3, 0.3),
+      0 0 120px rgba(117, 7, 135, 0.2);
+    transform: scale(0);
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes spin {
+    100% { transform: rotate(360deg); }
+  }
+
+  .overlay.visible .overlay-ring {
+    transform: scale(1);
+    animation: spin 3s linear infinite;
+  }
+
+  .overlay-number {
+    width: 41vmin;
+    height: 41vmin;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #2d1060, #1a0a2e);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20vmin;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 40px rgba(255, 0, 110, 0.5), 0 0 80px rgba(131, 56, 236, 0.3);
+  }
+</style>
+</head>
+<body>
+
+<h1>Drag Bingo</h1>
+<div class="pride-bar"></div>
+
+<div class="top-section">
+  <div class="current-draw">
+    <div class="label">Last drawn</div>
+    <div class="current-number" id="currentNumber"><span>--</span></div>
+  </div>
+  <div style="display:flex; flex-direction:column; align-items:center; gap:1.2vmin;">
+    <button class="draw-btn" id="drawBtn" onclick="drawNumber()">Draw Number</button>
+    <div class="stats">
+      Drawn: <span id="drawnCount">0</span> / 90 &nbsp;|&nbsp; Remaining: <span id="remainingCount">90</span>
+    </div>
+    <button class="reset-btn" onclick="resetGame()">Reset Game</button>
+  </div>
+</div>
+
+<div class="history" id="history"></div>
+
+<div class="board" id="board"></div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-ring">
+    <div class="overlay-number" id="overlayNumber"></div>
+  </div>
+</div>
+
+<script>
+  const FLAG_COLORS = [
+    { bg: '#E40303', glow: 'rgba(228,3,3,0.45)' },
+    { bg: '#FF8C00', glow: 'rgba(255,140,0,0.45)' },
+    { bg: '#FFED00', glow: 'rgba(255,237,0,0.45)', dark: true },
+    { bg: '#008026', glow: 'rgba(0,128,38,0.45)' },
+    { bg: '#004DFF', glow: 'rgba(0,77,255,0.45)' },
+    { bg: '#750787', glow: 'rgba(117,7,135,0.45)' },
+    { bg: '#73D7EE', glow: 'rgba(115,215,238,0.45)', dark: true },
+    { bg: '#FFAFC8', glow: 'rgba(255,175,200,0.45)', dark: true },
+    { bg: '#613915', glow: 'rgba(97,57,21,0.45)' },
+  ];
+
+  const drawn = new Set();
+  const order = [];
+
+  function initBoard() {
+    const board = document.getElementById('board');
+    board.innerHTML = '';
+    for (let i = 1; i <= 90; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.id = 'cell-' + i;
+      cell.textContent = i;
+      board.appendChild(cell);
+    }
+  }
+
+  function getColor(num) {
+    return FLAG_COLORS[Math.floor((num - 1) / 10)];
+  }
+
+  let drawing = false;
+
+  function drawNumber() {
+    if (drawing) return;
+
+    const remaining = [];
+    for (let i = 1; i <= 90; i++) {
+      if (!drawn.has(i)) remaining.push(i);
+    }
+    if (remaining.length === 0) return;
+
+    drawing = true;
+    document.getElementById('drawBtn').disabled = true;
+
+    const num = remaining[Math.floor(Math.random() * remaining.length)];
+    drawn.add(num);
+    order.push(num);
+
+    const overlay = document.getElementById('overlay');
+    const overlayNum = document.getElementById('overlayNumber');
+    overlayNum.textContent = num;
+    overlay.classList.add('visible');
+
+    setTimeout(() => {
+      overlay.classList.remove('visible');
+
+      const c = getColor(num);
+      const cell = document.getElementById('cell-' + num);
+      cell.classList.add('drawn', 'just-drawn');
+      cell.style.background = c.bg;
+      cell.style.boxShadow = '0 0 10px ' + c.glow;
+      if (c.dark) cell.style.color = '#1a0a2e';
+      setTimeout(() => cell.classList.remove('just-drawn'), 600);
+
+      const display = document.getElementById('currentNumber');
+      display.querySelector('span').textContent = num;
+      display.classList.remove('pop');
+      void display.offsetWidth;
+      display.classList.add('pop');
+
+      document.getElementById('drawnCount').textContent = drawn.size;
+      document.getElementById('remainingCount').textContent = 90 - drawn.size;
+
+      renderHistory();
+
+      drawing = false;
+      if (drawn.size < 90) {
+        document.getElementById('drawBtn').disabled = false;
+      }
+    }, 3000);
+  }
+
+  function renderHistory() {
+    const el = document.getElementById('history');
+    el.innerHTML = order.map(n =>
+      '<div class="history-item">' + n + '</div>'
+    ).join('');
+    el.scrollLeft = el.scrollWidth;
+  }
+
+  function resetGame() {
+    drawn.clear();
+    order.length = 0;
+    document.getElementById('currentNumber').querySelector('span').textContent = '--';
+    document.getElementById('drawnCount').textContent = '0';
+    document.getElementById('remainingCount').textContent = '90';
+    document.getElementById('drawBtn').disabled = false;
+    document.getElementById('history').innerHTML = '';
+    document.querySelectorAll('.cell').forEach(c => {
+      c.classList.remove('drawn', 'just-drawn');
+      c.style.background = '';
+      c.style.boxShadow = '';
+      c.style.color = '';
+    });
+  }
+
+  initBoard();
+</script>
+
+</body>
+</html>
