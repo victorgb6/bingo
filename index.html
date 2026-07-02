@@ -279,6 +279,92 @@
     color: #E40303;
   }
 
+  .mode-toggle {
+    display: flex;
+    align-items: center;
+    gap: 1vmin;
+    font-size: 1.6vmin;
+    color: #a080c0;
+  }
+
+  .mode-toggle span {
+    transition: color 0.2s;
+  }
+
+  .mode-toggle span.active {
+    color: #e0c0ff;
+    font-weight: 700;
+  }
+
+  .toggle-track {
+    width: 5vmin;
+    height: 2.4vmin;
+    border-radius: 1.2vmin;
+    background: rgba(255,255,255,0.1);
+    cursor: pointer;
+    position: relative;
+    transition: background 0.2s;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+
+  .toggle-track.on {
+    background: rgba(255,175,200,0.3);
+    border-color: #FFAFC8;
+  }
+
+  .toggle-track::after {
+    content: '';
+    position: absolute;
+    width: 1.8vmin;
+    height: 1.8vmin;
+    border-radius: 50%;
+    background: #e0c0ff;
+    top: 50%;
+    left: 0.3vmin;
+    transform: translateY(-50%);
+    transition: left 0.2s;
+  }
+
+  .toggle-track.on::after {
+    left: calc(100% - 2.1vmin);
+    background: #FFAFC8;
+  }
+
+  .manual-input {
+    display: flex;
+    align-items: center;
+    gap: 0.8vmin;
+  }
+
+  .manual-input input {
+    width: 7vmin;
+    height: 3.5vmin;
+    border-radius: 0.6vmin;
+    border: 2px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+    font-size: 2.2vmin;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+
+  .manual-input input:focus {
+    border-color: #FFAFC8;
+  }
+
+  .manual-input input::placeholder {
+    color: rgba(255,255,255,0.2);
+  }
+
+  .manual-input .error-msg {
+    font-size: 1.4vmin;
+    color: #E40303;
+    min-width: 12vmin;
+  }
+
   .overlay {
     position: fixed;
     inset: 0;
@@ -351,7 +437,19 @@
     <div class="current-number" id="currentNumber"><span>--</span></div>
   </div>
   <div style="display:flex; flex-direction:column; align-items:center; gap:1.2vmin;">
-    <button class="draw-btn" id="drawBtn" onclick="drawNumber()">Draw Number</button>
+    <div class="mode-toggle">
+      <span id="labelRandom" class="active">Random</span>
+      <div class="toggle-track" id="modeToggle" onclick="toggleMode()"></div>
+      <span id="labelManual">Manual</span>
+    </div>
+    <div id="randomControls">
+      <button class="draw-btn" id="drawBtn" onclick="drawNumber()">Draw Number</button>
+    </div>
+    <div id="manualControls" style="display:none;" class="manual-input">
+      <input type="text" id="manualNumber" inputmode="numeric" placeholder="1-90" maxlength="2" onkeydown="if(event.key==='Enter')submitManual()">
+      <button class="draw-btn" onclick="submitManual()">Enter</button>
+      <div class="error-msg" id="manualError"></div>
+    </div>
     <div class="stats">
       Drawn: <span id="drawnCount">0</span> / 90 &nbsp;|&nbsp; Remaining: <span id="remainingCount">90</span>
     </div>
@@ -384,6 +482,38 @@
 
   const drawn = new Set();
   const order = [];
+  let manualMode = false;
+
+  function toggleMode() {
+    manualMode = !manualMode;
+    document.getElementById('modeToggle').classList.toggle('on', manualMode);
+    document.getElementById('labelRandom').classList.toggle('active', !manualMode);
+    document.getElementById('labelManual').classList.toggle('active', manualMode);
+    document.getElementById('randomControls').style.display = manualMode ? 'none' : '';
+    document.getElementById('manualControls').style.display = manualMode ? 'flex' : 'none';
+    document.getElementById('manualError').textContent = '';
+    if (manualMode) document.getElementById('manualNumber').focus();
+  }
+
+  function submitManual() {
+    if (drawing) return;
+    const input = document.getElementById('manualNumber');
+    const errorEl = document.getElementById('manualError');
+    const num = parseInt(input.value, 10);
+
+    if (isNaN(num) || num < 1 || num > 90) {
+      errorEl.textContent = 'Enter 1-90';
+      return;
+    }
+    if (drawn.has(num)) {
+      errorEl.textContent = 'Already drawn';
+      return;
+    }
+
+    errorEl.textContent = '';
+    input.value = '';
+    revealNumber(num);
+  }
 
   function initBoard() {
     const board = document.getElementById('board');
@@ -412,10 +542,14 @@
     }
     if (remaining.length === 0) return;
 
-    drawing = true;
-    document.getElementById('drawBtn').disabled = true;
-
     const num = remaining[Math.floor(Math.random() * remaining.length)];
+    revealNumber(num);
+  }
+
+  function revealNumber(num) {
+    drawing = true;
+    document.querySelectorAll('.draw-btn').forEach(b => b.disabled = true);
+
     drawn.add(num);
     order.push(num);
 
@@ -448,8 +582,9 @@
 
       drawing = false;
       if (drawn.size < 90) {
-        document.getElementById('drawBtn').disabled = false;
+        document.querySelectorAll('.draw-btn').forEach(b => b.disabled = false);
       }
+      if (manualMode) document.getElementById('manualNumber').focus();
     }, 3000);
   }
 
