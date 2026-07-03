@@ -218,11 +218,16 @@ function enableRemote() {
       $('statusDot').classList.add('connected');
       $('statusText').textContent = 'Remote connected';
       document.body.classList.add('remote-connected');
+      $('connectionPanel').style.display = 'none';
+      $('settingsPanel').classList.remove('open');
+      $('settingsBtn').style.display = 'none';
     },
     onRemoteDisconnect: () => {
       $('statusDot').classList.remove('connected');
       $('statusText').textContent = 'Remote disconnected';
       document.body.classList.remove('remote-connected');
+      $('connectionPanel').style.display = '';
+      $('settingsBtn').style.display = '';
     },
     onRemoteCommand: handleRemoteCommand,
   });
