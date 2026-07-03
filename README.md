@@ -1,6 +1,6 @@
 # Pride Bingo
 
-A static bingo board for numbers 1-90, designed to be displayed on a TV screen. Built with Pride-themed colors inspired by the Progress Pride flag.
+A bingo board for numbers 1-90, designed to be displayed on a TV screen. Built with Pride-themed colors inspired by the Progress Pride flag.
 
 ## Features
 
@@ -10,25 +10,30 @@ A static bingo board for numbers 1-90, designed to be displayed on a TV screen. 
 - **Full-screen reveal** — each drawn number is displayed in a large overlay for 3 seconds so everyone can see it
 - **Undo & remove** — undo the last draw or hover any drawn cell to remove a specific number (manual mode)
 - **Fullscreen mode** — button in the top-right corner with wake lock to prevent the screen from sleeping
+- **Remote control** — use a phone as a remote by scanning the QR code on the host screen
 - **Pride-themed design** — rainbow gradient title, animated button, Progress Pride flag color bar, and each row of the board lights up in a different flag color
 
 ## Getting started
 
-Open `index.html` directly in a browser, or serve it locally:
-
 ```sh
+npm install
 npm run dev
 ```
 
-This starts a local server at `http://localhost:3000`.
+This starts a local Vite dev server at `http://localhost:3000`.
 
-## Deployment
+## Remote control
+
+The host screen displays a QR code in the top-left corner. Scan it with a phone on the same network to open the remote control view — a mobile-friendly panel with draw, manual entry, undo, and reset controls. Communication is peer-to-peer via PeerJS (WebRTC), no server required.
+
+## Build
 
 ```sh
 npm run build
-snow deploy --build-dir dist --yes
 ```
+
+Output goes to `dist/`. Preview the build with `npm run preview`.
 
 ## Tech
 
-Single static HTML file — no dependencies, no build step, no framework. Just HTML, CSS, and vanilla JavaScript.
+Vite + vanilla JavaScript. No framework. PeerJS for peer-to-peer remote control, qrcode for QR generation.

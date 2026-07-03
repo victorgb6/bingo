@@ -1,13 +1,21 @@
 {
-  "name": "drag-bingo",
-  "version": "1.0.0",
-  "description": "Drag bingo board with Pride-themed design",
+  "name": "pride-bingo",
+  "version": "2.0.0",
+  "type": "module",
+  "description": "Pride bingo board with remote control",
   "private": true,
   "scripts": {
-    "dev": "npx serve . -l 3000 --no-clipboard",
-    "start": "npx serve . -l 3000 --no-clipboard",
-    "build": "mkdir -p dist && cp index.html dist/",
-    "deploy": "snow deploy --build-dir dist --yes"
+    "dev": "vite --port 3000",
+    "build": "vite build",
+    "preview": "vite preview --port 3000",
+    "deploy": "npm run build"
+  },
+  "devDependencies": {
+    "vite": "^6.3.0"
+  },
+  "dependencies": {
+    "peerjs": "^1.5.4",
+    "qrcode": "^1.5.4"
   },
   "license": "MIT"
 }
