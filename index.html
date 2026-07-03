@@ -218,6 +218,8 @@
     transition: all 0.3s ease;
     border: 1px solid rgba(255, 255, 255, 0.07);
     min-height: 0;
+    position: relative;
+    overflow: visible;
   }
 
   .cell.drawn {
@@ -365,6 +367,64 @@
     min-width: 12vmin;
   }
 
+  .undo-btn {
+    font-size: 1.8vmin;
+    font-weight: 700;
+    padding: 0.8vmin 2vmin;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 0.6vmin;
+    background: rgba(255,255,255,0.06);
+    color: #a080c0;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .undo-btn:hover {
+    border-color: #FF8C00;
+    color: #FF8C00;
+  }
+
+  .undo-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    border-color: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.2);
+  }
+
+  .cell-x {
+    display: none;
+    position: absolute;
+    top: -0.4vmin;
+    right: -0.4vmin;
+    width: 2.2vmin;
+    height: 2.2vmin;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.4);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.2vmin;
+    font-weight: 900;
+    line-height: 2.2vmin;
+    text-align: center;
+    cursor: pointer;
+    z-index: 2;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0;
+    font-family: inherit;
+    backdrop-filter: blur(4px);
+  }
+
+  body.manual-active .cell.drawn:hover .cell-x {
+    display: block;
+  }
+
+  .cell-x:hover {
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    transform: scale(1.2);
+  }
+
   .overlay {
     position: fixed;
     inset: 0;
@@ -424,6 +484,36 @@
     color: #fff;
     text-shadow: 0 0 40px rgba(255, 0, 110, 0.5), 0 0 80px rgba(131, 56, 236, 0.3);
   }
+
+  .fullscreen-btn {
+    position: fixed;
+    bottom: 1.5vmin;
+    right: 1.5vmin;
+    z-index: 50;
+    width: 4vmin;
+    height: 4vmin;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 0.5vmin;
+    background: rgba(0,0,0,0.3);
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    backdrop-filter: blur(4px);
+  }
+
+  .fullscreen-btn:hover {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border-color: rgba(255,255,255,0.3);
+  }
+
+  .fullscreen-btn svg {
+    width: 2.2vmin;
+    height: 2.2vmin;
+  }
 </style>
 </head>
 <body>
@@ -448,6 +538,7 @@
     <div id="manualControls" style="display:none;" class="manual-input">
       <input type="text" id="manualNumber" inputmode="numeric" placeholder="1-90" maxlength="2" onkeydown="if(event.key==='Enter')submitManual()">
       <button class="draw-btn" onclick="submitManual()">Enter</button>
+      <button class="undo-btn" id="undoBtn" onclick="undoLast()" disabled>Undo</button>
       <div class="error-msg" id="manualError"></div>
     </div>
     <div class="stats">
@@ -460,6 +551,17 @@
 <div class="history" id="history"></div>
 
 <div class="board" id="board"></div>
+
+<button class="fullscreen-btn" id="fullscreenBtn" onclick="toggleFullscreen()" title="Toggle fullscreen">
+  <svg id="fsIconExpand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+    <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+  </svg>
+  <svg id="fsIconShrink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+    <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
+    <line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>
+  </svg>
+</button>
 
 <div class="overlay" id="overlay">
   <div class="overlay-ring">
@@ -492,6 +594,7 @@
     document.getElementById('randomControls').style.display = manualMode ? 'none' : '';
     document.getElementById('manualControls').style.display = manualMode ? 'flex' : 'none';
     document.getElementById('manualError').textContent = '';
+    document.body.classList.toggle('manual-active', manualMode);
     if (manualMode) document.getElementById('manualNumber').focus();
   }
 
@@ -515,6 +618,57 @@
     revealNumber(num);
   }
 
+  function undoLast() {
+    if (drawing || order.length === 0) return;
+
+    const num = order.pop();
+    drawn.delete(num);
+
+    const cell = document.getElementById('cell-' + num);
+    cell.classList.remove('drawn');
+    cell.style.background = '';
+    cell.style.boxShadow = '';
+    cell.style.color = '';
+
+    const lastNum = order.length > 0 ? order[order.length - 1] : '--';
+    document.getElementById('currentNumber').querySelector('span').textContent = lastNum;
+
+    document.getElementById('drawnCount').textContent = drawn.size;
+    document.getElementById('remainingCount').textContent = 90 - drawn.size;
+
+    document.querySelectorAll('.draw-btn').forEach(b => b.disabled = false);
+
+    renderHistory();
+    updateUndoBtn();
+    document.getElementById('manualError').textContent = '';
+  }
+
+  function removeNumber(num) {
+    drawn.delete(num);
+    order.splice(order.indexOf(num), 1);
+
+    const cell = document.getElementById('cell-' + num);
+    cell.classList.remove('drawn');
+    cell.style.background = '';
+    cell.style.boxShadow = '';
+    cell.style.color = '';
+
+    const lastNum = order.length > 0 ? order[order.length - 1] : '--';
+    document.getElementById('currentNumber').querySelector('span').textContent = lastNum;
+
+    document.getElementById('drawnCount').textContent = drawn.size;
+    document.getElementById('remainingCount').textContent = 90 - drawn.size;
+
+    document.querySelectorAll('.draw-btn').forEach(b => b.disabled = false);
+
+    renderHistory();
+    updateUndoBtn();
+  }
+
+  function updateUndoBtn() {
+    document.getElementById('undoBtn').disabled = order.length === 0;
+  }
+
   function initBoard() {
     const board = document.getElementById('board');
     board.innerHTML = '';
@@ -523,6 +677,14 @@
       cell.className = 'cell';
       cell.id = 'cell-' + i;
       cell.textContent = i;
+      const xBtn = document.createElement('button');
+      xBtn.className = 'cell-x';
+      xBtn.textContent = '✕';
+      xBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (manualMode && !drawing && drawn.has(i)) removeNumber(i);
+      });
+      cell.appendChild(xBtn);
       board.appendChild(cell);
     }
   }
@@ -579,6 +741,7 @@
       document.getElementById('remainingCount').textContent = 90 - drawn.size;
 
       renderHistory();
+      updateUndoBtn();
 
       drawing = false;
       if (drawn.size < 90) {
@@ -610,7 +773,42 @@
       c.style.boxShadow = '';
       c.style.color = '';
     });
+    updateUndoBtn();
   }
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  }
+
+  let wakeLock = null;
+
+  async function requestWakeLock() {
+    if ('wakeLock' in navigator) {
+      try { wakeLock = await navigator.wakeLock.request('screen'); } catch {}
+    }
+  }
+
+  async function releaseWakeLock() {
+    if (wakeLock) {
+      await wakeLock.release();
+      wakeLock = null;
+    }
+  }
+
+  document.addEventListener('fullscreenchange', () => {
+    const isFs = !!document.fullscreenElement;
+    document.getElementById('fsIconExpand').style.display = isFs ? 'none' : '';
+    document.getElementById('fsIconShrink').style.display = isFs ? '' : 'none';
+    if (isFs) requestWakeLock(); else releaseWakeLock();
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && document.fullscreenElement) requestWakeLock();
+  });
 
   initBoard();
 </script>

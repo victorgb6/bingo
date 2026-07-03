@@ -1,0 +1,13 @@
+{
+  "name": "drag-bingo",
+  "version": "1.0.0",
+  "description": "Drag bingo board with Pride-themed design",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve . -l 3000 --no-clipboard",
+    "start": "npx serve . -l 3000 --no-clipboard",
+    "build": "mkdir -p dist && cp index.html dist/",
+    "deploy": "snow deploy --build-dir dist --yes"
+  },
+  "license": "MIT"
+}
